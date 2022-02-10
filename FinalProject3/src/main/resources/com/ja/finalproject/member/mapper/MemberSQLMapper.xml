@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.finalproject.member.mapper.MemberSQLMapper">
+
+	<select id="createMemberPk" resultType="int">
+		SELECT FP_MEMBER_seq.nextval FROM Dual
+	</select>
+
+
+
+	<insert id="joinMember">
+		INSERT INTO FP_Member VALUES(
+			#{member_no},
+			#{member_id},
+			#{member_pw},
+			#{member_nick},
+			#{member_gender},
+			#{member_birth},
+			#{member_phone},
+			#{member_email},
+			SYSDATE
+		)
+	</insert>
+
+	<!-- 주의 사항 : 1. 맨뒤에 ; 빼야된다.. 2.select 경우.. resultType 작성하자 -->
+	<!--  메일 인증 안하실분들은 아래코드로 할 것.
+	<select id="getMemberByIdAndPw" resultType="com.ja.finalproject.vo.MemberVo">
+		SELECT * 
+		FROM FP_Member
+		WHERE member_id = #{member_id} 
+		AND member_pw = #{member_pw}	
+	</select>
+	 -->
+	<select id="getMemberByIdAndPw" resultType="com.ja.finalproject.vo.MemberVo">
+		SELECT * FROM FP_Member fmb , FP_MailAuth fma
+		WHERE fmb.member_no = fma.member_no
+		AND fmb.member_id = #{member_id}
+		AND fmb.member_pw = #{member_pw}
+		AND fma.mailauth_complete = 'Y'
+	</select>
+
+	<select id="getMemberByNo" resultType="com.ja.finalproject.vo.MemberVo">
+		SELECT * FROM FP_MEMBER WHERE member_no = #{no}
+	</select>
+	
+	<select id="getCountById" resultType="int">
+		SELECT COUNT(*) FROM FP_MEMBER WHERE member_id = #{id}		
+	</select>
+
+	<!-- 취미 카테고리 관련 -->
+	<select id="getHobbyCategoryList" resultType="com.ja.finalproject.vo.HobbyCategoryVo">
+		SELECT * FROM FP_Hobby_Category ORDER BY hobby_category_no ASC
+	</select>
+
+	<!-- 회원 취미 -->
+	<insert id="insertMemberHobby">
+		INSERT INTO FP_MemberHobby VALUES(
+			FP_MemberHobby_seq.nextval,
+			#{member_no},
+			#{hobby_category_no}
+		)
+	</insert>
+	
+	<!-- 이메일 인증 T -->
+	<insert id="insertMailAuth">
+		INSERT INTO FP_MailAuth VALUES(
+			FP_MailAuth_seq.nextval,
+			#{member_no},
+			#{mailauth_key},
+			'N',
+			NULL
+		)	
+	</insert>
+	
+	<update id="updateMailAuthComplete">
+		UPDATE FP_MailAuth 
+		SET mailauth_complete = 'Y' , mailauth_date = SYSDATE 
+		WHERE mailauth_key = #{authKey}	
+	</update>
+
+</mapper>
+
+
+
+

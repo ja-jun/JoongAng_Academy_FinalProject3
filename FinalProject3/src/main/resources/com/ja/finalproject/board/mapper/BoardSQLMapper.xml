@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ja.finalproject.board.mapper.BoardSQLMapper">
+
+	<select id="createBoardPk" resultType="int">
+		SELECT FP_Board_seq.nextval FROM Dual	
+	</select>
+
+	<insert id="insertBoard">
+		INSERT INTO FP_Board VALUES(
+			#{board_no},
+			#{member_no},
+			#{board_title},
+			#{board_content},
+			0,
+			SYSDATE
+		)	
+	</insert>
+
+	<!-- 동적 쿼리... -->
+	<select id="getBoardList" resultType="com.ja.finalproject.vo.BoardVo">
+	
+		SELECT t2.* FROM (
+			SELECT t1.* , ROWNUM AS rnum FROM (			
+				SELECT fb.* FROM FP_BOARD fb , FP_MEMBER fm 
+				WHERE fb.member_no = fm.member_no
+				<if test="searchOption != null">
+					<choose>
+						<when test="searchOption == 'title'">
+							AND fb.board_title LIKE '%' || #{searchWord} || '%'
+						</when>	
+						<when test="searchOption =='content'">
+							AND fb.board_content LIKE '%' || #{searchWord} || '%'
+						</when>
+						<when test="searchOption =='nick'">
+							AND fm.member_nick LIKE '%' || #{searchWord} || '%'
+						</when>		
+					</choose>
+				</if>
+				ORDER BY fb.board_no DESC
+			) t1
+		) t2		
+		<![CDATA[ 
+		WHERE t2.rnum >= (#{pageNum} - 1) * 10 + 1 
+		AND t2.rnum <= #{pageNum} * 10				
+		]]>		
+	</select>
+
+	<select id="getBoardCount" resultType="int">
+		SELECT COUNT(*) 
+		FROM FP_BOARD fb , FP_MEMBER fm
+		WHERE fb.member_no = fm.member_no
+		<if test="searchOption != null">
+			<choose>
+				<when test="searchOption == 'title'">
+					AND fb.board_title LIKE '%' || #{searchWord} || '%'
+				</when>	
+				<when test="searchOption =='content'">
+					AND fb.board_content LIKE '%' || #{searchWord} || '%'
+				</when>
+				<when test="searchOption =='nick'">
+					AND fm.member_nick LIKE '%' || #{searchWord} || '%'
+				</when>		
+			</choose>
+		</if>				
+	</select>	
+
+	<select id="getBoardByNo" resultType="com.ja.finalproject.vo.BoardVo">
+		SELECT * 
+		FROM FP_BOARD
+		WHERE board_no = #{no}		
+	</select>
+
+	<update id="increaseReadCount">
+		UPDATE FP_BOARD 
+		SET board_readcount = board_readcount + 1
+		WHERE board_no = #{no}			
+	</update>
+
+	<delete id="deleteBoard">
+		DELETE FROM FP_BOARD WHERE board_no = #{no}
+	</delete>
+
+	<update id="updateBoard">
+		UPDATE FP_BOARD 
+		SET board_title = #{board_title} , board_content = #{board_content}
+		WHERE board_no = #{board_no}
+	</update>
+	
+	<!-- 이미지T -->
+	<insert id="insertImage">
+		INSERT INTO FP_BoardImage VALUES(
+			FP_BoardImage_seq.nextval,
+			#{board_no},
+			#{image_url},
+			#{image_original_filename}
+		)
+	</insert>
+	
+	<select id="getImageListByBordNo" resultType="com.ja.finalproject.vo.BoardImageVo">
+		SELECT * 
+		FROM FP_BoardImage 
+		WHERE board_no = #{boardNo}	
+	</select>
+	
+	<!-- 좋아요T -->
+	<insert id="insertLike">
+		INSERT INTO FP_BoardLike VALUES(
+			FP_BoardLike_seq.nextval,
+			#{member_no},
+			#{board_no},
+			SYSDATE
+		)	
+	</insert>
+	
+	<delete id="deleteLike">
+		DELETE 
+		FROM FP_BoardLike 
+		WHERE member_no = #{member_no}	
+		AND board_no = #{board_no}
+	</delete>
+
+	<select id="getTotalLikeCount" resultType="int">
+		SELECT COUNT(*) FROM FP_BoardLike 
+		WHERE board_no = #{board_no}	
+	</select>
+	
+	<select id="getMyLikeCount" resultType="int">
+		SELECT COUNT(*) 
+		FROM FP_BoardLike 
+		WHERE board_no = #{board_no} 
+		AND member_no = #{member_no}
+	</select>
+
+	<!-- 코멘트 T -->
+	<insert id="insertComment">
+		INSERT INTO FP_Comment VALUES(
+			FP_Comment_seq.nextval,
+			#{board_no},
+			#{member_no},
+			#{comment_content},
+			SYSDATE
+		)	
+	</insert>
+	
+	<select id="getCommentListByBoardNo" resultType="map"> <!-- 단, 대문자로 리턴된다. -->
+		SELECT fpc.* , fpm.member_nick 
+		FROM FP_Comment fpc , FP_Member fpm  
+		WHERE fpc.member_no = fpm.member_no 
+		AND fpc.board_no = #{boardNo}
+		ORDER BY fpc.comment_no ASC		
+	</select>
+	
+	<delete id="deleteComment">
+		DELETE FROM FP_Comment WHERE comment_no = #{commentNo}		
+	</delete>
+
+	<update id="updateComment">
+		UPDATE FP_Comment 
+		SET comment_content = 	#{comment_content}
+		WHERE comment_no = #{comment_no}	
+	</update>
+
+</mapper>
+
+
+
+
+
+
